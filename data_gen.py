@@ -36,6 +36,7 @@ if __name__ == "__main__":
     trueCov_list = []
     X_list = []
     Sigma_tilde_list = [] 
+    w_theta_list = []
 
     for rho in rho_list:
         #Génération des matrices de covariance estimées sigma_tilde
@@ -76,5 +77,11 @@ if __name__ == "__main__":
             if regul == False:
                 Sigma_tilde = Sigma
         Sigma_tilde_list.append(Sigma_tilde)
+        w_theta = RG_LS_IPL(Sigma_tilde, 100, True, False, False)
+        w_theta_list.append(w_theta)
+
     print(np.shape(Sigma_tilde_list))
     print(np.shape(X_list))
+    print(np.shape(w_theta_list))
+    print(w_theta_list[0])
+    
