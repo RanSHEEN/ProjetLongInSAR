@@ -1,6 +1,8 @@
-
 import torch
 import torch.nn as nn
+from torch.utils.data import Dataset
+import utils.activations
+
 
 class MLP(nn.Module):
     def __init__(self, input_size=1920, hidden_sizes=[1024, 512, 256], output_size=30):
@@ -18,3 +20,18 @@ class MLP(nn.Module):
         x = self.relu(self.fc3(x))
         x = self.fc4(x)
         return x
+
+
+class ComplexDataset(Dataset):
+    def __init__(self, data):
+        """
+        data : un tenseur complexe torch de forme (nb d'echantillons, 30, 64) de type torch.complex64
+        """
+        self.data = data
+
+    def __len__(self):
+        return self.data.shape[0]
+    
+    def __getitem__(self, idx):
+        return self.data[idx]
+
