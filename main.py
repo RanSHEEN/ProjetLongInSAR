@@ -1,5 +1,6 @@
-from data_gen_func import data_gen
-from MLP import MLP, ComplexDataset
+from utils.data_gen_func import data_gen
+from utils.MLP import MLP, ComplexDataset
+from utils.activations import *
 import numpy as np
 import torch
 import os

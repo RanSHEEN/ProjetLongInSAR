@@ -12,6 +12,7 @@ class MLP(nn.Module):
         self.fc3 = nn.Linear(hidden_sizes[1], hidden_sizes[2])
         self.fc4 = nn.Linear(hidden_sizes[2], output_size)
         self.relu = nn.ReLU()
+        
 
     def forward(self, x):
         x = x.view(x.size(0), -1)
