@@ -94,12 +94,18 @@ class NeuralNetwork(Model):
         self.fc3 = DenseLayer(hidden_dim, output_dim)
 
     def call(self, inputs):
-        # x, sigma_tilde = inputs
-        # x = tf.concat([tf.reshape(x, [tf.shape(x)[0], -1]), tf.reshape(sigma_tilde, [tf.shape(sigma_tilde)[0], -1])], axis=1)
         x = inputs
         x = self.fc1(x)
         x = self.fc2(x)
         x = self.fc3(x)
         return x
+    
+    
+
+def custom_complex_mse(y_true, y_pred):
+    diff = y_true - y_pred
+    loss = tf.reduce_mean(tf.square(tf.abs(diff)))  # Compute mean squared magnitude
+    return tf.cast(loss, tf.complex64)  # Ensure loss remains complex
+
 
 
