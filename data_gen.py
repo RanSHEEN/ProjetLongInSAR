@@ -4,9 +4,11 @@ import time
 from tqdm import tqdm
 from joblib import Parallel, delayed
 import matplotlib.pyplot as plt
+from torch.utils.data import Dataset
 
 import sys
 import os
+
 # adding lib to the system path
 sys.path.insert(0,
     os.path.join(os.path.dirname(__file__), '../'))
@@ -17,25 +19,13 @@ from src.covariance_estimators import SCM, regul_linear, bandw, SCM_LR, \
     tyler_estimator_covariance, tyler_estimator_covariance_LR, corr_phase, corr_phase_LR
 from src.optimization import MM_KL_IPL, MM_LS_IPL, RG_comet_IPL, RG_LS_IPL
 
-if __name__ == "__main__":
-    # Paremeters setting
-    rho_list = np.random.uniform(low=0.96, high=0.99, size=200)
-    p = 30 # data size
-    nu = 0 # scale parameter of K-distributed distribution (0 if Gaussian)
-    b = 3 # bandwidth parameter
-    alpha = 0.5 # coefficient regularization
-    rank = 1 # rank of the covariance matrix (p if full-rank)
-    phasechoice='random'#,maxphase 
-    cost = 'LS' # cost function: LS, KL or WLS
-    estimator = 'PO' # estimator : 'SCM', 'Tyler' or 'PO' 
-    regul = 'SK' # regularization: False, LR, SK, BW 
-
-    n = 64 # number of samples
+def generate_data(rho_list, p=30, nu=0, b=3, alpha=0.5, rank=1, phasechoice='random', cost='LS', estimator='PO', regul='SK', n=64):
     delta_thetasim_list = []
     SigmaTrue_list = []
     trueCov_list = []
     X_list = []
     Sigma_tilde_list = [] 
+    w_theta_list = []
 
     for rho in rho_list:
         #Génération des matrices de covariance estimées sigma_tilde
@@ -75,6 +65,22 @@ if __name__ == "__main__":
                 Sigma_tilde = bandw(Sigma,b)
             if regul == False:
                 Sigma_tilde = Sigma
+
         Sigma_tilde_list.append(Sigma_tilde)
-    print(np.shape(Sigma_tilde_list))
-    print(np.shape(X_list))
+        w_theta = RG_LS_IPL(Sigma_tilde, 100, True, False, False)
+        w_theta_list.append(w_theta)
+    return X_list, Sigma_tilde_list, w_theta_list
+
+class ComplexDataset(Dataset):
+    def __init__(self, data):
+        """
+        data : un tenseur complexe torch de forme (nb d'echantillons, 30, 64) de type torch.complex64
+        """
+        self.data = data
+
+    def __len__(self):
+        return self.data.shape[0]
+    
+    def __getitem__(self, idx):
+        return self.data[idx]
+
