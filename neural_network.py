@@ -1,7 +1,6 @@
 import tensorflow as tf
 from tensorflow.keras import Model, Layer
 
-import cvnn
 from cvnn.activations import zrelu, modrelu
 from cvnn.losses import ComplexAverageCrossEntropy, ComplexMeanSquareError
 
@@ -30,7 +29,10 @@ from cvnn.losses import ComplexAverageCrossEntropy, ComplexMeanSquareError
 class DenseLayer(Layer):
     def __init__(self, input_dim, output_dim, activation=None):
         super(DenseLayer, self).__init__()
-        
+        self.input_dim = input_dim
+        self.output_dim = output_dim
+        self.activation = activation
+
         # Create separate real and imaginary parts
         real_init = tf.keras.initializers.RandomNormal(stddev=0.1)
         imag_init = tf.keras.initializers.RandomNormal(stddev=0.1)
@@ -74,7 +76,7 @@ class DenseLayer(Layer):
         W = tf.complex(self.W_real, self.W_imag)  
         b = tf.complex(self.b_real, self.b_imag)  
         
-        x = tf.matmul(tf.cast(x, tf.complex64), W) + b
+        x = tf.matmul(x, W) + b
         if self.activation == 'z_mod_relu':
             x = zrelu(x)
             x = modrelu(x)
@@ -85,13 +87,14 @@ class DenseLayer(Layer):
         return x
 
 
-    
 class NeuralNetwork(Model):
     def __init__(self, input_dim, hidden_dim, output_dim):
         super(NeuralNetwork, self).__init__()
         self.fc1 = DenseLayer(input_dim, hidden_dim, activation='z_mod_relu')
         self.fc2 = DenseLayer(hidden_dim, hidden_dim, activation='z_mod_relu')
-        self.fc3 = DenseLayer(hidden_dim, output_dim)
+        self.fc3 = DenseLayer(hidden_dim, hidden_dim, activation='z_mod_relu')
+        self.fc4 = DenseLayer(hidden_dim, hidden_dim, activation='z_mod_relu')
+        self.fc5 = DenseLayer(hidden_dim, output_dim)
 
     def call(self, inputs):
         x = inputs
@@ -100,12 +103,28 @@ class NeuralNetwork(Model):
         x = self.fc3(x)
         return x
     
+
+# class ComplexSGD(tf.keras.optimizers.Optimizer):
+#     def __init__(self, learning_rate=0.01, name="ComplexSGD", **kwargs):
+#         super().__init__(learning_rate, **kwargs)
+#         self.name = name
+
+#     def apply_gradients(self, grads_and_vars):
+#         updated_vars = []
+#         for grad, var in grads_and_vars:
+#             if grad is not None:
+#                 real_update = var - self.learning_rate * tf.math.real(grad)
+#                 # imag_update = var - self.learning_rate * tf.math.imag(grad) * 1j
+#                 imag_update = tf.complex(tf.math.real(var), tf.math.imag(var) - self.learning_rate * tf.math.imag(grad))
+#                 # updated_vars.append(var.assign(tf.complex(real_update, imag_update)))
+#                 updated_vars.append(var.assign(tf.complex(tf.cast(real_update, tf.float32), tf.cast(imag_update, tf.float32))))
+#         return updated_vars
     
 
-def custom_complex_mse(y_true, y_pred):
-    diff = y_true - y_pred
-    loss = tf.reduce_mean(tf.square(tf.abs(diff)))  # Compute mean squared magnitude
-    return tf.cast(loss, tf.complex64)  # Ensure loss remains complex
+# def custom_complex_mse(y_true, y_pred):
+#     diff = y_true - y_pred
+#     loss = tf.reduce_mean(tf.square(tf.abs(diff)))  # Compute mean squared magnitude
+#     return tf.cast(loss, tf.complex64)  # Ensure loss remains complex
 
 
 

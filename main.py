@@ -14,8 +14,12 @@ from cvnn.losses import ComplexMeanSquareError
 import data_gen
 import neural_network
 
+import time
+
 
 if __name__ == "__main__":
+    start_time = time.time()
+
     rho_list = np.random.uniform(low=0.96, high=0.99, size=200)
     p = 30 # data size
     nu = 0 # scale parameter of K-distributed distribution (0 if Gaussian)
@@ -66,9 +70,10 @@ if __name__ == "__main__":
     model = neural_network.NeuralNetwork(input_dim, hidden_dim, output_dim) 
     model.compile(optimizer=tf.keras.optimizers.SGD(learning_rate=0.001), loss=ComplexMeanSquareError())
     # model.compile(optimizer=tf.keras.optimizers.SGD(learning_rate=0.001), loss=neural_network.custom_complex_mse)
+    # model.compile(optimizer=neural_network.ComplexSGD(learning_rate=0.001), loss=ComplexMeanSquareError())
 
     # Création des DataLoaders
-    epochs = 10
+    epochs = 1000
     batch_size = 32
     train_losses = []
     val_losses = []
@@ -82,7 +87,6 @@ if __name__ == "__main__":
 
     for epoch in range(epochs):
         epoch_loss = 0
-        # for i in range(0, len(X_list_tensor), batch_size):
         for X_batch, y_batch in zip(X_train_dataloader, y_train_dataloader):
             # X_batch = tf.convert_to_tensor(X_batch, dtype=tf.complex64)
             # y_batch = tf.convert_to_tensor(y_batch, dtype=tf.complex64)
@@ -92,16 +96,8 @@ if __name__ == "__main__":
             with tf.GradientTape() as tape:
                 predictions = model(X_batch)
                 loss = model.loss(y_batch, predictions)
-                # loss = model.loss(tf.complex(tf.math.real(y_batch), tf.math.imag(y_batch)), 
-                #                   tf.complex(tf.math.real(predictions), tf.math.imag(predictions)))
-                # print(f"y_batch dtype: {y_batch.dtype}, predictions dtype: {predictions.dtype}")
-                # print(f"Loss dtype after computation: {loss.dtype}")
 
             gradients = tape.gradient(loss, model.trainable_variables)
-            # # Ensure gradients remain complex
-            # gradients = [tf.complex(g, tf.zeros_like(g)) if g is not None else None for g in gradients]
-            # for i, grad in enumerate(gradients):
-            #     print(f"Gradient {i} dtype: {grad.dtype}")
             model.optimizer.apply_gradients(zip(gradients, model.trainable_variables))
             epoch_loss += loss.numpy()
         
@@ -126,15 +122,25 @@ if __name__ == "__main__":
         val_losses.append(avg_val_loss)
 
         print(f"Epoch {epoch+1}/{epochs}, Train Loss: {avg_train_loss:.4f}, Validation Loss: {avg_val_loss:.4f}")
-    
-    # Plot training and validation loss
-    plt.figure(figsize=(8, 6))
-    plt.plot(range(1, epochs+1), train_losses, marker='o', linestyle='-', label="Train Loss")
-    plt.plot(range(1, epochs+1), val_losses, marker='s', linestyle='--', label="Validation Loss")
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
-    plt.title('Training & Validation Loss')
-    plt.legend()
-    plt.grid()
+
+    end_time = time.time()  # Arrêter le chronomètre
+    execution_time = end_time - start_time
+    print(f"Temps d'exécution total: {execution_time:.2f} secondes")
+
+    # Improved Plot for Training and Validation Loss
+    plt.figure(figsize=(10, 6))  # Increase figure size for better readability
+    # Plot Train Loss with smooth line and visible markers
+    plt.plot(range(1, epochs+1), train_losses, linestyle='-', color='royalblue', linewidth=2, markersize=4, label="Train Loss")
+    # Plot Validation Loss with dashed line and square markers
+    plt.plot(range(1, epochs+1), val_losses, linestyle='--', color='orangered', linewidth=2, markersize=4, label="Validation Loss")
+    # Labels and Title
+    plt.xlabel('Epoch', fontsize=14, fontweight='bold')
+    plt.ylabel('Loss', fontsize=14, fontweight='bold')
+    plt.title('Training & Validation Loss', fontsize=16, fontweight='bold')
+    # Improved Legend
+    plt.legend(fontsize=12, loc='upper right', frameon=True, edgecolor='black')
+    # Enhanced Grid with Transparency
+    plt.grid(True, linestyle='--', alpha=0.6)
+    # Show the plot
     plt.show()
 
