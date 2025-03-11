@@ -72,6 +72,30 @@ class Cardioid(nn.Module):
         return attenuation_factor * z
 
 
+# class ModReLU(nn.Module):
+#     """
+#     Applique la fonction d'activation modReLU à un tenseur complexe.
+
+#     La modReLU agit uniquement sur le module (magnitude) de z tout en conservant sa phase. Elle introduit une zone morte autour de 0, annulant les vecteurs dont la magnitude est inférieure à un biais b. Ce biais est un paramètre apprenable.
+
+#     Args:
+#         z (torch.Tensor): Un tenseur complexe de type torch.complex64.
+
+#     Returns:
+#         torch.Tensor: Un tenseur complexe de même forme que z, après application de la modReLU.
+#     """
+#     def __init__(self, in_features):
+#         super(ModReLU, self).__init__()
+#         self.log_neg_b = nn.Parameter(torch.zeros(in_features))
+
+#     def forward(self, z):
+#         b = -torch.exp(self.log_neg_b)
+#         b = b.unsqueeze(0).expand(z.size(0), -1)
+#         r = torch.abs(z)
+#         output = torch.relu(r + b)
+#         output = output * (z / (r + 1e-8))
+#         return output
+
 class ModReLU(nn.Module):
     """
     Applique la fonction d'activation modReLU à un tenseur complexe.
@@ -86,16 +110,12 @@ class ModReLU(nn.Module):
     """
     def __init__(self, in_features):
         super(ModReLU, self).__init__()
-        self.log_neg_b = nn.Parameter(torch.zeros(in_features))
+        self.b = -0.1  # Définir b comme une constante
 
     def forward(self, z):
-        b = -torch.exp(self.log_neg_b)
-        # Assurez-vous que b a la même taille que r
-        b = b.unsqueeze(0).expand(z.size(0), -1)
+        b = self.b
         r = torch.abs(z)
         output = torch.relu(r + b)
         output = output * (z / (r + 1e-8))
         return output
-
-
 

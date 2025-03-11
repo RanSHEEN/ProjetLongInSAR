@@ -5,10 +5,10 @@ from utils.activations import Cardioid, CartReLU, ZReLU, ModReLU
 
 
 class MLP(nn.Module):
-    def __init__(self, input_size=1920, hidden_sizes=[1024, 512, 256], output_size=30, activation='cartReLU'):
+    def __init__(self, file, input_size=1920, hidden_sizes=[1024, 512, 256], output_size=30, activation='cartReLU'):
         super(MLP, self).__init__()
         self.hidden_sizes = hidden_sizes
-
+        self.file = file
         # Créer une liste pour stocker les couches du réseau
         layers = []
 
@@ -49,8 +49,10 @@ class MLP(nn.Module):
 
     def forward(self, x):
         x = x.view(x.size(0), -1)
-        for layer in self.layers:
-            x = layer(x)
+        with open(self.file, 'w') as f:
+            for i, layer in enumerate(self.layers):
+                x = layer(x)
+                f.write(f'Layer {i+1} output:\n{x}\n\n')
         return x.unsqueeze(-1)  # Ajouter une dimension singleton pour correspondre à [batch_size, 30, 1]
 
 
