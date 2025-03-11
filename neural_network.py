@@ -2,7 +2,6 @@ import tensorflow as tf
 from tensorflow.keras import Model, Layer
 
 from cvnn.activations import zrelu, modrelu
-from cvnn.losses import ComplexAverageCrossEntropy, ComplexMeanSquareError
 
 
 #%% Version Pytorch
@@ -26,6 +25,14 @@ from cvnn.losses import ComplexAverageCrossEntropy, ComplexMeanSquareError
     
 
 #%% Version Tensorflow
+class ComplexInput(Layer):
+    def __init__(self, input_dim):
+        super(ComplexInput, self).__init__()
+        self.input_dim = input_dim
+
+    def call(self, inputs):
+        return tf.complex(tf.math.real(inputs), tf.math.imag(inputs))
+
 class DenseLayer(Layer):
     def __init__(self, input_dim, output_dim, activation=None):
         super(DenseLayer, self).__init__()
@@ -75,7 +82,8 @@ class DenseLayer(Layer):
     def call(self, x):
         W = tf.complex(self.W_real, self.W_imag)  
         b = tf.complex(self.b_real, self.b_imag)  
-        
+        x = tf.complex(tf.math.real(x), tf.math.imag(x))
+
         x = tf.matmul(x, W) + b
         if self.activation == 'z_mod_relu':
             x = zrelu(x)
@@ -90,6 +98,7 @@ class DenseLayer(Layer):
 class NeuralNetwork(Model):
     def __init__(self, input_dim, hidden_dim, output_dim):
         super(NeuralNetwork, self).__init__()
+        self.input_layer = ComplexInput(input_dim)  # Ensure complex input
         self.fc1 = DenseLayer(input_dim, hidden_dim, activation='z_mod_relu')
         self.fc2 = DenseLayer(hidden_dim, hidden_dim, activation='z_mod_relu')
         self.fc3 = DenseLayer(hidden_dim, hidden_dim, activation='z_mod_relu')
@@ -97,10 +106,12 @@ class NeuralNetwork(Model):
         self.fc5 = DenseLayer(hidden_dim, output_dim)
 
     def call(self, inputs):
-        x = inputs
+        x = self.input_layer(inputs)  # Preserve complex values
         x = self.fc1(x)
         x = self.fc2(x)
         x = self.fc3(x)
+        x = self.fc4(x)
+        x = self.fc5(x)
         return x
     
 
