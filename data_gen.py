@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import sys
 import os
 # adding lib to the system path
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
 sys.path.insert(0,
     os.path.join(os.path.dirname(__file__), '../'))
 
