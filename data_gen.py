@@ -21,7 +21,7 @@ from src.optimization import MM_KL_IPL, MM_LS_IPL, RG_comet_IPL, RG_LS_IPL
 if __name__ == "__main__":
     # Paremeters setting
     rho_list = np.random.uniform(low=0.96, high=0.99, size=200)
-    p = 30 # data size
+    p = 10 # data size
     nu = 0 # scale parameter of K-distributed distribution (0 if Gaussian)
     b = 3 # bandwidth parameter
     alpha = 0.5 # coefficient regularization
@@ -31,7 +31,7 @@ if __name__ == "__main__":
     estimator = 'PO' # estimator : 'SCM', 'Tyler' or 'PO' 
     regul = 'SK' # regularization: False, LR, SK, BW 
 
-    n = 64 # number of samples
+    n = 25 # number of samples
     delta_thetasim_list = []
     SigmaTrue_list = []
     trueCov_list = []

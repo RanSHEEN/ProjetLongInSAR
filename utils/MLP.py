@@ -1,11 +1,11 @@
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset
-from utils.activations import Cardioid, CartReLU, ZReLU, ModReLU
+from utils.activations import Cardioid, CartReLU, ZReLU, ModReLU, AffSin
 
 
 class MLP(nn.Module):
-    def __init__(self, file, input_size=1920, hidden_sizes=[1024, 512, 256], output_size=30, activation='cartReLU'):
+    def __init__(self, file, input_size=250, hidden_sizes=[1024, 512, 256], output_size=10, activation='cartReLU'):
         super(MLP, self).__init__()
         self.hidden_sizes = hidden_sizes
         self.file = file
@@ -44,6 +44,8 @@ class MLP(nn.Module):
             return Cardioid()
         elif activation == 'modReLU':
             return ModReLU(in_features)
+        elif activation == 'affsin':
+            return AffSin()
         else:
             raise ValueError(f"Activation '{activation}' is not supported.")
 
