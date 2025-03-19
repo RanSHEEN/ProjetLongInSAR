@@ -1,7 +1,11 @@
+import numpy as np
+
 import tensorflow as tf
 from tensorflow.keras import Model, Layer
+from tensorflow import Tensor
+from typing import Optional
 
-from cvnn.activations import zrelu, modrelu
+from cvnn.activations import zrelu, modrelu, mvn_activation
 
 
 #%% Version Pytorch
@@ -25,6 +29,26 @@ from cvnn.activations import zrelu, modrelu
     
 
 #%% Version Tensorflow
+def mvn(z: Tensor, k: Optional[int] = None) -> Tensor:
+    """
+    Function inspired by Naum Aizenberg.
+        A multi-valued neuron (MVN) is a neural element with n inputs and one output lying on the unit circle,
+        and with complex-valued weights.
+    Works:
+        https://link.springer.com/article/10.1007%2FBF01068667
+        http://pefmath2.etf.rs/files/93/399.pdf
+    """
+    magnitude = tf.abs(z)
+
+    if k:
+        # values = np.linspace(pi / k, 2 * pi - pi / k, k)
+        angle_cast = tf.math.floor(tf.math.angle(z) * k / (2 * np.pi))
+        # import pdb; pdb.set_trace()
+        return tf.math.exp(tf.complex(
+            magnitude * tf.zeros(tf.shape(z), dtype=z.dtype.real_dtype), (angle_cast + 0.5) * 2 * np.pi / k))
+    else:
+        return magnitude * tf.math.exp(tf.complex(tf.zeros(tf.shape(z), dtype=z.dtype.real_dtype), tf.math.angle(z)))
+
 class ComplexInput(Layer):
     def __init__(self, input_dim):
         super(ComplexInput, self).__init__()
@@ -92,6 +116,8 @@ class DenseLayer(Layer):
             x = zrelu(x)
         elif self.activation == 'modrelu':
             x = modrelu(x)
+        elif self.activation == 'mvn':
+            x = mvn(x, k=10)
         return x
 
 
@@ -99,7 +125,7 @@ class NeuralNetwork(Model):
     def __init__(self, input_dim, hidden_dim, output_dim):
         super(NeuralNetwork, self).__init__()
         self.input_layer = ComplexInput(input_dim)  # Ensure complex input
-        self.fc1 = DenseLayer(input_dim, hidden_dim, activation='z_mod_relu')
+        self.fc1 = DenseLayer(input_dim, hidden_dim, activation='mvn')
         self.fc2 = DenseLayer(hidden_dim, hidden_dim, activation='z_mod_relu')
         self.fc3 = DenseLayer(hidden_dim, hidden_dim, activation='z_mod_relu')
         self.fc4 = DenseLayer(hidden_dim, hidden_dim, activation='z_mod_relu')

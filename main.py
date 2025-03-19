@@ -116,65 +116,67 @@ if __name__ == "__main__":
     for epoch in range(epochs):
         epoch_loss = 0
         for X_batch, y_batch in zip(X_train_dataloader, y_train_dataloader):
-            ## SGD partie réelle
-            # with tf.GradientTape(persistent=True) as tape:
-            #     predictions = model(X_batch)
-            #     loss = model.loss.call(y_batch, predictions)
-
-            # gradients = tape.gradient(loss, model.trainable_variables)
-
-            # # Ensure gradients remain complex
-            # # complex_gradients = [tf.complex(tf.math.real(g), tf.math.imag(g)) if g is not None else None for g in gradients]
-
-            # model.optimizer.apply_gradients(zip(gradients, model.trainable_variables))
-            # epoch_loss += loss.numpy()
-            
-            ## SGD partie réelle + complexe
+            #%% SGD partie réelle
             with tf.GradientTape(persistent=True) as tape:
                 predictions = model(X_batch)
                 loss = model.loss.call(y_batch, predictions)
 
-            # Extract trainable variables
-            trainable_vars = model.trainable_variables
+            gradients = tape.gradient(loss, model.trainable_variables)
 
-            # Compute gradients for real and imaginary parts separately
-            real_gradients = []
-            imag_gradients = []
+            # Ensure gradients remain complex
+            # complex_gradients = [tf.complex(tf.math.real(g), tf.math.imag(g)) if g is not None else None for g in gradients]
 
-            for var in trainable_vars:
-                real_grad = tape.gradient(loss, var)  # Compute gradient w.r.t the complex variable
+            model.optimizer.apply_gradients(zip(gradients, model.trainable_variables))
+            epoch_loss += loss.numpy()
+            
+            #%% SGD partie réelle + complexe
+            # with tf.GradientTape(persistent=True) as tape:
+            #     predictions = model(X_batch)
+            #     loss = model.loss.call(y_batch, predictions)
 
-                # Ensure gradients are not None
-                if real_grad is None:
-                    real_grad = tf.zeros_like(var)
+            # # Extract trainable variables
+            # trainable_vars = model.trainable_variables
 
-                # Extract real and imaginary parts of the gradients
-                real_grad_part = tf.math.real(real_grad)
-                imag_grad_part = tf.math.imag(real_grad)
+            # # Compute gradients for real and imaginary parts separately
+            # real_gradients = []
+            # imag_gradients = []
 
-                real_gradients.append(real_grad_part)
-                imag_gradients.append(imag_grad_part)
+            # for var in trainable_vars:
+            #     real_grad = tape.gradient(loss, var)  # Compute gradient w.r.t the complex variable
 
-            # Apply gradients separately for real and imaginary parts
-            for var, real_grad, imag_grad in zip(trainable_vars, real_gradients, imag_gradients):
-                # Extract real and imaginary parts of the variable
-                real_var = tf.Variable(tf.math.real(var))
-                imag_var = tf.Variable(tf.math.imag(var))
+            #     # Ensure gradients are not None
+            #     if real_grad is None:
+            #         real_grad = tf.zeros_like(var)
 
-                # Apply gradient descent update
-                real_update = real_var - model.optimizer.learning_rate * real_grad
-                imag_update = imag_var - model.optimizer.learning_rate * imag_grad
+            #     # Extract real and imaginary parts of the gradients
+            #     real_grad_part = tf.math.real(real_grad)
+            #     imag_grad_part = tf.math.imag(real_grad)
 
-                # Merge back into a complex variable
-                updated_var = tf.complex(real_update, imag_update)
+            #     real_gradients.append(real_grad_part)
+            #     imag_gradients.append(imag_grad_part)
 
-                # Assign updated variable back to the model
-                var.assign(updated_var)
+            # # Apply gradients separately for real and imaginary parts
+            # for var, real_grad, imag_grad in zip(trainable_vars, real_gradients, imag_gradients):
+            #     # Extract real and imaginary parts of the variable
+            #     real_var = tf.Variable(tf.math.real(var))
+            #     imag_var = tf.Variable(tf.math.imag(var))
 
-            # Delete the tape to free memory
-            del tape
+            #     # Apply gradient descent update
+            #     real_update = real_var - model.optimizer.learning_rate * real_grad
+            #     imag_update = imag_var - model.optimizer.learning_rate * imag_grad
 
-        avg_train_loss = epoch_loss / (len(X_train_dataloader) / batch_size)
+            #     # Merge back into a complex variable
+            #     updated_var = tf.complex(real_update, imag_update)
+
+            #     # Assign updated variable back to the model
+            #     var.assign(updated_var)
+
+            # # Delete the tape to free memory
+            # del tape
+
+        # avg_train_loss = epoch_loss / (len(X_train_dataloader) / batch_size)
+        avg_train_loss = epoch_loss / len(X_train_dataloader)
+        avg_train_loss = np.mean(avg_train_loss)  # Ensure it returns a scalar
         train_losses.append(avg_train_loss)
 
         # Validation loop
@@ -191,10 +193,13 @@ if __name__ == "__main__":
             #                   tf.complex(tf.math.real(predictions), tf.math.imag(predictions)))
             epoch_val_loss += loss.numpy()
 
-        avg_val_loss = epoch_val_loss / (len(X_val_dataloader) / batch_size)
+        # avg_val_loss = epoch_val_loss / (len(X_val_dataloader) / batch_size)
+        avg_val_loss = epoch_val_loss / len(X_val_dataloader)
+        avg_val_loss = np.mean(avg_val_loss)
         val_losses.append(avg_val_loss)
 
-        print(f"Epoch {epoch+1}/{epochs}, Train Loss: {avg_train_loss:.4f}, Validation Loss: {avg_val_loss:.4f}")
+        # print(f"Epoch {epoch+1}/{epochs}, Train Loss: {avg_train_loss:.4f}, Validation Loss: {avg_val_loss:.4f}")
+        print(f"Epoch {epoch+1}/{epochs}, Train Loss: {avg_train_loss.item():.4f}, Validation Loss: {avg_val_loss.item():.4f}")
 
         # # Early Stopping Check
         # if avg_val_loss < best_val_loss - min_delta:
