@@ -20,87 +20,61 @@ if __name__ == "__main__":
     print(f"Calculs effectués sur : {device}\n")
     print('-------------------------------------------------\n')
 
-    model_none = MLP(file='none_hidden_out.txt', hidden_sizes=[2048, 256, 128], activation='')
+    model_0 = MLP(file='none_hidden_out.txt', hidden_sizes=[2048, 256, 128], activation='affsin', alpha=0)
     print('None model \n')
-    print(model_none)
-    model_none = model_none.to(device)
+    print(model_0)
+    model_0 = model_0.to(device)
 
     print('\n-------------------------------------------------------------')
-    model_cart = MLP(file='cartReLU_hidden_out.txt', hidden_sizes=[2048, 256, 128], activation='cartReLU')
-    print('CartReLU model \n')
-    print(model_cart)
-    model_card = model_cart.to(device)
+    model_0005 = MLP(file='none_hidden_out.txt', hidden_sizes=[2048, 256, 128], activation='affsin', alpha=0.005)
+    print('None model \n')
+    print(model_0005)
+    model_0005 = model_0005.to(device)
 
     print('\n-------------------------------------------------------------')
-    model_card = MLP(file='cardioid_hidden_out.txt', hidden_sizes=[2048, 256, 128], activation='cardioid')
-    print('Cardioid model \n')
-    print(model_card)
-    model_card = model_card.to(device)
-    print('\n-------------------------------------------------------------')
-
-
-    model_z = MLP(file='z_hidden_out.txt', hidden_sizes=[2048, 256, 128], activation='zReLU')
-    print('ZReLU model')
-    print(model_z)
-    model_z = model_z.to(device)
+    model_005 = MLP(file='none_hidden_out.txt', hidden_sizes=[2048, 256, 128], activation='affsin', alpha=0.05)
+    print('None model \n')
+    print(model_005)
+    model_005 = model_005.to(device)
     print('\n-------------------------------------------------------------')
 
 
-    model_mod = MLP(file='mod_hidden_out.txt', hidden_sizes=[2048, 256, 128], activation='modReLU')
-    print('ModReLU model')
-    print(model_mod)
-    model_mod = model_mod.to(device)
+    model_05 = MLP(file='none_hidden_out.txt', hidden_sizes=[2048, 256, 128], activation='affsin', alpha=0.5)
+    print('None model \n')
+    print(model_05)
+    model_05 = model_05.to(device)
     print('\n-------------------------------------------------------------')
 
-    model_affsin = MLP(file='affsin_hidden_out.txt', hidden_sizes=[2048, 256, 128], activation='affsin')
-    print('AffSin model')
-    print(model_affsin)
-    model_affsin = model_affsin.to(device)
+
+    model_1 = MLP(file='none_hidden_out.txt', hidden_sizes=[2048, 256, 128], activation='affsin', alpha=1)
+    print('None model \n')
+    print(model_1)
+    model_1 = model_1.to(device)
     print('\n-------------------------------------------------------------')
 
-    model_tanh = MLP(file='carttanh_hidden_out.txt', hidden_sizes=[2048, 256, 128], activation='tanh')
-    print('CartTanh model')
-    print(model_tanh)
-    model_tanh = model_tanh.to(device)
-    print('\n-------------------------------------------------------------')
 
-    model_modmvn = MLP(file='modmvn_hidden_out.txt', hidden_sizes=[2048, 256, 128], activation='modmvn')
-    print('ModMVN model')
-    print(model_modmvn)
-    model_modmvn = model_modmvn.to(device)
-    print('\n-------------------------------------------------------------')
+    model_names = ['0', '0.005', '0.05', '0.5', '1']
+    model_list = [model_0, model_0005, model_005, model_05, model_1]
 
-    model_names = ['None', 'CartReLU', 'Cardioid', 'ZReLU', 'ModReLU', 'AffSin', 'CartTanh', 'ModMVN']
-    model_list = [model_none, model_cart, model_card, model_z, model_mod, model_affsin, model_tanh, model_modmvn]
+    optimizer_0 = optim.Adam(model_0.parameters(), lr=0.001)
+    optimizer_0005 = optim.Adam(model_0005.parameters(), lr=0.001)
+    optimizer_005 = optim.Adam(model_005.parameters(), lr=0.001)
+    optimizer_05 = optim.Adam(model_05.parameters(), lr=0.001)
+    optimizer_1 = optim.Adam(model_1.parameters(), lr=0.001)
+    optimizer_list = [optimizer_0, optimizer_0005, optimizer_005, optimizer_05, optimizer_1]
 
-    optimizer_none = optim.Adam(model_none.parameters(), lr=0.001)
-    optimizer_cart = optim.Adam(model_cart.parameters(), lr=0.001)
-    optimizer_card = optim.Adam(model_card.parameters(), lr=0.001)
-    optimizer_z = optim.Adam(model_z.parameters(), lr=0.001)
-    optimizer_mod = optim.Adam(model_mod.parameters(), lr=0.001)
-    optimizer_affsin = optim.Adam(model_affsin.parameters(), lr=0.001)
-    optimizer_tanh = optim.Adam(model_tanh.parameters(), lr = 0.001)
-    optimizer_modmvn = optim.Adam(model_modmvn.parameters(), lr = 0.001)
-    optimizer_list = [optimizer_none, optimizer_cart, optimizer_card, optimizer_z, optimizer_mod, optimizer_affsin, optimizer_tanh, optimizer_modmvn]
-
-    train_losses_none = []
-    val_losses_none = []
-    train_losses_cart = []
-    val_losses_cart = []
-    train_losses_card = []
-    val_losses_card = []
-    train_losses_z = []
-    val_losses_z = []
-    train_losses_mod = []
-    val_losses_mod = []
-    train_losses_affsin = []
-    val_losses_affsin = []
-    train_losses_tanh = []
-    val_losses_tanh = []
-    train_losses_modmvn = []
-    val_losses_modmvn = []
-    train_losses = [train_losses_none, train_losses_cart, train_losses_card, train_losses_z, train_losses_mod, train_losses_affsin, train_losses_tanh, train_losses_modmvn]
-    val_losses = [val_losses_none, val_losses_cart, val_losses_card, val_losses_z, val_losses_mod, val_losses_affsin, val_losses_tanh, val_losses_modmvn]
+    train_losses_0 = []
+    val_losses_0 = []
+    train_losses_0005 = []
+    val_losses_0005 = []
+    train_losses_005 = []
+    val_losses_005 = []
+    train_losses_05 = []
+    val_losses_05 = []
+    train_losses_1 = []
+    val_losses_1 = []
+    train_losses = [train_losses_0, train_losses_0005, train_losses_005, train_losses_05, train_losses_1]
+    val_losses = [val_losses_0, val_losses_0005, val_losses_005, val_losses_05, val_losses_1]
 
 
     # Boucle d'entraînement

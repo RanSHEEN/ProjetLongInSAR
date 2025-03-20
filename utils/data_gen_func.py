@@ -74,3 +74,19 @@ def data_gen(size=200, p=30, n=64, cost='LS', estimator='PO', regul='SK'):
         w_theta_list.append(w_theta)
     
     return X_list, w_theta_list
+
+
+def normalize_data(X, w_list):
+    real_parts = np.array([np.real(x) for x in X])
+    imag_parts = np.array([np.imag(x) for x in X])
+    # Normalize real and imaginary parts separately
+    real_mean, real_std = np.mean(real_parts), np.std(real_parts)
+    imag_mean, imag_std = np.mean(imag_parts), np.std(imag_parts)
+    normalized_real = (real_parts - real_mean) / real_std
+    normalized_imag = (imag_parts - imag_mean) / imag_std
+    # Reconstruct complex values
+    X = normalized_real + 1j * normalized_imag
+    # Normalize w_theta_list
+    w_list = [w / np.linalg.norm(w) if np.linalg.norm(w) != 0 else w for w in w_list]
+
+    return X, w_list

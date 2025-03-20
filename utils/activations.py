@@ -14,16 +14,9 @@ class CartReLU(nn.Module):
     Returns:
         torch.Tensor: Un tenseur complexe de même forme que z, après application de la cartReLU.
     """
-    def __init__(self):
-        super(CartReLU, self).__init__()
-        self.relu = nn.ReLU()
-
+    
     def forward(self, z):
-        a, b = z.real, z.imag
-        a_relu = nn.ReLU(a)
-        b_relu = nn.ReLU(b)
-        res = torch.complex(a_relu, b_relu)
-        return res
+        return torch.complex(torch.relu(z.real), torch.relu(z.imag))
 
 
 class ZReLU(nn.Module):
@@ -136,20 +129,41 @@ class AffSin(nn.Module):
         self.alpha = alpha
     def forward(self, z):
         return torch.complex((z.real + self.alpha * torch.sin(torch.pi * z.real)), (z.imag + self.alpha * torch.sin(torch.pi * z.imag)))
-    
-class MVN(nn.Module):
+
+
+class ModMVN(nn.Module):
     """
-    Applique MVN à un tenseur complexe, MVN correspond une division de R² en K cadrants.
+    modMVN divise la phase en k sections et ajuste la phase en entrée à la plus proche de ces k valeurs
 
-    Au sein d'un même cadrant tous les points sont projetés sur le même point appartenant au cercle unitaire.
-
-    f: z -> exp(i * 2 * pi * a / k) 
-    
-    avec i * 2 * pi * a < arg(z) < i * 2 * pi * (a + 1)
+    en conservant la magitude.
 
     Args:
         z (torch.Tensor): Un tenseur complexe de type torch.complex64.
 
     Returns:
-        torch.Tensor: Un tenseur complexe de même forme que z, après application de MVN.
+        torch.Tensor: Un tenseur complexe de même forme que z, après application de modMVN.
     """
+    def __init__(self, k=10):
+        super(ModMVN, self).__init__()
+        self.k = k
+    
+    def forward(self, z):
+        magnitude = torch.abs(z)
+        phase = torch.angle(z)
+        phase = phase % (2 * np.pi)
+        a = torch.round(phase * self.k / (2 * np.pi)) % self.k
+        new_phase = 2 * np.pi * a / self.k
+        return magnitude * torch.exp(1j * new_phase)
+
+class CartTanh(nn.Module):
+    """
+    Applique la tangente hyperbolique aux parties réelle et imaginaire de z
+
+    Args:
+        z (torch.Tensor): Un tenseur complexe de type torch.complex64.
+
+    Returns:
+        torch.Tensor: Un tenseur complexe de même forme que z, après application de cartTanh.
+    """
+    def forward(self, z):
+        return torch.complex(torch.tanh(z.real), torch.tanh(z.imag))
