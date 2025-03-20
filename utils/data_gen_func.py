@@ -89,4 +89,4 @@ def normalize_data(X, w_list):
     # Normalize w_theta_list
     w_list = [w / np.linalg.norm(w) if np.linalg.norm(w) != 0 else w for w in w_list]
 
-    return X, w_list
+    return X, w_list, real_mean, real_std, imag_mean, imag_std

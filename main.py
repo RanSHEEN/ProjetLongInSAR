@@ -104,7 +104,7 @@ if __name__ == "__main__":
 
 
     # Boucle d'entraînement
-    num_epochs = 50
+    num_epochs = 100
     for model, optimizer, train, val, name in zip(model_list, optimizer_list, train_losses, val_losses, model_names):
         start_mod = time.time()
         print('-------------------------------------------------------------------------------------------------------\n')
@@ -115,8 +115,8 @@ if __name__ == "__main__":
             input_train, output_train = data_gen(size=500, p=10, n=25)
             input_val, output_val = data_gen(size=100, p=10, n=25)
 
-            input_train, output_train = normalize_data(input_train, output_train)
-            input_val, output_val = normalize_data(input_val, output_val)
+            input_train, output_train, _, _, _, _ = normalize_data(input_train, output_train)
+            input_val, output_val, _, _, _, _ = normalize_data(input_val, output_val)
 
             # Convertir les listes en tableaux NumPy uniques
             input_train = np.array(input_train)  # Convertir en un seul tableau NumPy
@@ -173,6 +173,10 @@ if __name__ == "__main__":
         end_mod = time.time()
         exec_mod = end_mod - start_mod
         print(f"Temps d'entraînement du modèle {name} : {exec_mod:.2f} secondes.\n")
+        
+        model_path = f'model_{name}.pth'
+        torch.save(model.state_dict(), model_path)
+        print(f"Modèle sauvegardé à {model_path}")
 
     end_time = time.time()
     exec_time = end_time - start_time
