@@ -16,7 +16,7 @@ from src.covariance_estimators import SCM, regul_linear, bandw, SCM_LR, \
     tyler_estimator_covariance, tyler_estimator_covariance_LR, corr_phase, corr_phase_LR
 from src.optimization import MM_KL_IPL, MM_LS_IPL, RG_comet_IPL, RG_LS_IPL
 
-def data_gen(size=200, p=30, n=64, cost='LS', estimator='PO', regul='SK'):
+def data_gen(size=1000, p=30, n=64, cost='LS', estimator='PO', regul='SK'):
     rho_list = np.random.uniform(low=0.96, high=0.99, size=200)
     b = 3 # bandwidth parameter
     alpha = 0.5 # coefficient regularization
@@ -73,7 +73,7 @@ def data_gen(size=200, p=30, n=64, cost='LS', estimator='PO', regul='SK'):
         w_theta = RG_LS_IPL(Sigma_tilde, 100, True, False, False)
         w_theta_list.append(w_theta)
     
-    return X_list, w_theta_list
+    return X_list, w_theta_list, delta_thetasim_list, rho_list
 
 
 def normalize_data(X, w_list):
@@ -87,6 +87,24 @@ def normalize_data(X, w_list):
     # Reconstruct complex values
     X = normalized_real + 1j * normalized_imag
     # Normalize w_theta_list
+    original_norms = [np.linalg.norm(w) for w in w_list]
     w_list = [w / np.linalg.norm(w) if np.linalg.norm(w) != 0 else w for w in w_list]
 
-    return X, w_list, real_mean, real_std, imag_mean, imag_std
+    return X, w_list, real_mean, real_std, imag_mean, imag_std, original_norms
+
+def denormalize_data(X, real_mean, real_std, imag_mean, imag_std):
+    real_parts = np.real(X)
+    imag_parts = np.imag(X)
+
+    # Dénormaliser les parties réelles et imaginaires
+    denormalized_real = real_parts * real_std + real_mean
+    denormalized_imag = imag_parts * imag_std + imag_mean
+
+    # Reconstruire les valeurs complexes
+    X = denormalized_real + 1j * denormalized_imag
+
+    return X
+
+def denormalize_w_list(w_list, original_norms):
+    denormalized_w_list = [w * original_norms[i] for i, w in enumerate(w_list)]
+    return denormalized_w_list
