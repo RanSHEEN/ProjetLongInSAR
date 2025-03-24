@@ -2,6 +2,7 @@ from utils.data_gen_func import data_gen
 from utils.MLP import MLP, ComplexDataset
 from utils.activations import *
 from utils.loss import complex_mse_loss, weighted_arg_mod_loss
+from utils import NPYViewer as npyv
 
 import numpy as np
 import torch
@@ -14,13 +15,82 @@ import torch.optim as optim
 import matplotlib.pyplot as plt
 
 import time
+import cv2  # OpenCV pour l'égalisation d'histogramme
 
+# Fonction pour afficher un patch
+def show_patch(patch, index_img, index_patch):
+    plt.figure(figsize=(4, 4))
+    plt.imshow(patch, cmap='gray', vmin=np.min(patch), vmax=np.max(patch))
+    plt.title(f"Image {index_img+1}, Patch {index_patch+1}")
+    plt.axis('off')
+    plt.show()
 
 if __name__ == "__main__":
-    start_time = time.time()
+    #%% Visualisation des données
+    # npyv.openNPY_CLI_noGUI('data-mexico\phases.npy')
+    # Charger le fichier NPY
+    fichier_npy = 'data-mexico/phases.npy'  # Assurez-vous du bon chemin d'accès
+    data = np.load(fichier_npy, mmap_mode='r')  # Mode lecture sans tout charger en mémoire
+
+    # Vérification de la forme des données
+    print("Shape des données:", data.shape)  # Devrait être (3631, 16702, 40)
+
+    # # Boucle pour afficher les 40 images
+    # for i in range(40):  # Parcourt les 40 couches
+    #     data_2d = data[:, :, i]
+        
+    #     # Normalisation des valeurs entre 0 et 255
+    #     # data_scaled = 255 * (data_2d - np.min(data_2d)) / (np.max(data_2d) - np.min(data_2d))
+    #     # data_scaled = np.uint8(data_scaled)  # Conversion en entier 8 bits
+        
+    #     # Égalisation d'histogramme
+    #     # data_eq = cv2.equalizeHist(data_scaled)
+        
+    #     plt.figure(figsize=(10, 6))
+    #     plt.imshow(data_2d, cmap='gray', aspect='auto')
+    #     # plt.colorbar(label="Valeurs")
+    #     plt.title(f"Visualisation de la couche {i+1}")
+    #     plt.xlabel("Index X")
+    #     plt.ylabel("Index Y")
+    #     plt.show()
+
+    # Paramètres des patchs
+    patch_size = 100
+    height, width, num_layers = data.shape
+
+    # Liste pour stocker les patches 3D : (100, 100, 40)
+    patches = []
+
+    # Découpe spatiale : chaque patch contient toutes les couches temporelles
+    for y in range(0, height - patch_size + 1, patch_size):
+        for x in range(0, width - patch_size + 1, patch_size):
+            # Extraire le patch (100, 100, 40)
+            patch = data[y:y+patch_size, x:x+patch_size, :]  # garde toutes les couches temporelles
+            patches.append(patch)
+
+    print(f"Nombre total de patches 3D extraits : {len(patches)}")
+    print(f"Exemple de forme d'un patch : {patches[0].shape}")
+
+    # Boucle sur chaque image
+    # for i in range(num_layers):
+    #     current_img = data[:, :, i]
+
+    #     # Découper en patchs de 100x100
+    #     patch_id = 0
+    #     for y in range(0, height, patch_size):
+    #         for x in range(0, width, patch_size):
+    #             # S'assurer que le patch reste dans les dimensions
+    #             if y + patch_size <= height and x + patch_size <= width:
+    #                 patch = current_img[y:y+patch_size, x:x+patch_size]
+    #                 show_patch(patch, i, patch_id)
+    #                 patch_id += 1
+
+
+    start_time = time.time() # Mesurer le temps d'exécution
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print('Calculs effectués sur : ', device)
 
+    # Création des modèles
     model_mod = MLP(file='mod_hidden_out.txt', hidden_sizes=[2048, 4096, 1024, 512, 256, 128], activation='modReLU')
     print('ModReLU model')
     print(model_mod)
@@ -36,12 +106,12 @@ if __name__ == "__main__":
     model_names = ['ModReLU', 'AffSin']
     model_list = [model_mod, model_affsin]
 
-    # optimizer_card = optim.Adam(model_card.parameters(), lr=0.0001)
-    # optimizer_z = optim.Adam(model_z.parameters(), lr=0.0001)
+    # Optimiseurs
     optimizer_mod = optim.SGD(model_mod.parameters(), lr=0.1)
     optimizer_affsin = optim.SGD(model_affsin.parameters(), lr=0.0001)
-    # optimizer_list = [optimizer_card, optimizer_z, optimizer_mod]
     optimizer_list = [optimizer_mod, optimizer_affsin]
+
+    # Pertes
     train_losses_card = []
     val_losses_card = []
     train_losses_z = []
@@ -118,21 +188,19 @@ if __name__ == "__main__":
 
             print(f'Epoch [{epoch+1}/{num_epochs}], Train Loss: {avg_train_loss:.4f}, Val Loss: {avg_val_loss:.4f}')
 
+    # Mesurer le temps d'exécution
     end_time = time.time()
     exec_time = end_time - start_time
     print(f"Temps d'exécution total (entraînement de {len[model_list]} modèles sur {num_epochs} epochs) : {exec_time:.2f} secondes")
+    
     # Tracer les pertes
     plt.figure(figsize=(12, 6))
-
-    # Tracer les courbes pour chaque modèle
     for i, (train_loss, val_loss, model_name) in enumerate(zip(train_losses, val_losses, model_names)):
         plt.plot(train_loss, label=f'Train Loss ({model_name})')
         plt.plot(val_loss, label=f'Validation Loss ({model_name})', linestyle='--')
-
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
     plt.title('Training and Validation Loss for Different Activations')
     plt.legend()
     plt.grid(True)
     plt.show()
-
