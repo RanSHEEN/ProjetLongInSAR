@@ -63,10 +63,12 @@ class MLP(nn.Module):
 
     def forward(self, x):
         x = x.view(x.size(0), -1)
-        with open(self.file, 'w') as f:
-            for i, layer in enumerate(self.layers):
-                x = layer(x)
-                f.write(f'Layer {i+1} output:\n{x}\n\n')
+        # Sauvegarde facultative
+        if self.file is not None:
+            with open(self.file, 'w') as f:
+                for i, layer in enumerate(self.layers):
+                    x = layer(x)
+                    f.write(f'Layer {i+1} output:\n{x}\n\n')
         return x.unsqueeze(-1)  # Ajouter une dimension singleton pour correspondre à [batch_size, 30, 1]
 
 
