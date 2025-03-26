@@ -27,13 +27,13 @@ def show_patch(patch, index_img, index_patch):
 
 # --- Préparer les patches ---
 def prepare_patch_input(patch):
-    # patch shape: (100, 100, 40)
-    flat_patch = patch.flatten()  # (100*100*40,)
+    # patch shape: (5, 5, 10)
+    flat_patch = patch.flatten() 
     flat_patch = torch.tensor(flat_patch, dtype=torch.complex64).unsqueeze(0)  # (1, N)
     return flat_patch
 
 # --- Visualiser les résultats ---
-def show_prediction_map(results, name, grid_shape):
+def show_prediction_map(results, name, grid_shape, vmin=-3, vmax=3):
     """
     results: liste de scalaires de sortie
     grid_shape: (H_patches, W_patches)
@@ -41,10 +41,24 @@ def show_prediction_map(results, name, grid_shape):
     result_array = np.array(results).squeeze()  # (N,)
     result_image = result_array.reshape(grid_shape)  # exemple: (36, 167) selon ton découpage
     
-    plt.figure(figsize=(10, 6))
-    plt.imshow(result_image, cmap='jet',)
-    plt.title(f"Résultat du MLP {name}")
-    plt.colorbar()
+    # plt.figure(figsize=(10, 6))
+    # plt.imshow(result_image, cmap='jet')
+    # plt.title(f"Résultat du MLP {name}")
+    # plt.colorbar()
+    # plt.show()
+    grid = np.random.random((10,10))
+
+    fig, ax = plt.subplots(figsize=(8, 8))
+    # im = ax.imshow(result_image, cmap='jet')
+    im = ax.imshow(result_image, extent=[0,100,0,1], aspect='auto', cmap='jet')
+    ax.set_title(f"{name}", fontsize=10)
+
+    # Colorbar horizontale en dessous
+    cbar = fig.colorbar(im, ax=ax, orientation='horizontal', fraction=0.05, pad=0.1)
+    cbar.set_label('', fontsize=8)
+    cbar.ax.tick_params(labelsize=8)
+
+    plt.tight_layout()
     plt.show()
 
 if __name__ == "__main__":
@@ -220,6 +234,18 @@ if __name__ == "__main__":
     # Charger le fichier NPY
     fichier_npy = 'data-mexico/phases.npy'  # Assurez-vous du bon chemin d'accès
     data = np.load(fichier_npy, mmap_mode='r')  # Mode lecture sans tout charger en mémoire
+    # data = np.load(fichier_npy).copy()
+
+    # # Centrer les données temporellement
+    # for t in range(data.shape[2]):
+    #     mean_val = np.mean(data[:, :, t])
+    #     data[:, :, t] -= mean_val
+    # print("Données centrées par date.")
+
+    # save_dir = "data-mexico"
+    # filename = os.path.join(save_dir, f"data-centres.npy")
+    # np.save(filename, data)
+    # print(f"Résultats du centrage enregistrés dans {filename}")
 
     # Vérification de la forme des données
     print("Shape des données:", data.shape)  # Devrait être (3631, 16702, 40)
@@ -247,14 +273,16 @@ if __name__ == "__main__":
     patch_size = 5
     height, width, num_layers = data.shape
 
-    # Liste pour stocker les patches 3D : (100, 100, 40)
+    # Liste pour stocker les patches 3D
     patches = []
+    # Indices temporels : 1, 5, 9, ..., 37 (10 dates)
+    time_indices = list(range(1, 40, 4))  # [1, 5, 9, ..., 37]
 
     # Découpe spatiale : chaque patch contient toutes les couches temporelles
     for y in range(0, height - patch_size + 1, patch_size):
         for x in range(0, width - patch_size + 1, patch_size):
             # Extraire le patch (5, 5, 10)
-            patch = data[y:y+patch_size, x:x+patch_size, 15:25]  # garde toutes les couches temporelles
+            patch = data[y:y+patch_size, x:x+patch_size, time_indices]  # garde toutes les couches temporelles
             patches.append(patch)
 
     print(f"Nombre total de patches 3D extraits : {len(patches)}")
@@ -328,6 +356,15 @@ if __name__ == "__main__":
         # Vérification du nombre de résultats
         print(f"{name} → {len(results_by_model[name])} patches prédits")
 
+    save_dir = "results"
+    os.makedirs(save_dir, exist_ok=True)
+
+    # for name in model_names:
+    result_array = np.array(results_by_model[name])
+    filename = os.path.join(save_dir, f"{name}_results.npy")
+    np.save(filename, result_array)
+    print(f"Résultats du modèle {name} enregistrés dans {filename}")
+
     # Déduction de la grille à partir du nombre total de patches
     total_patches = len(results_by_model[name])
     w_patches = (width - patch_size + 1) // patch_size + 1
@@ -337,7 +374,7 @@ if __name__ == "__main__":
     end_time = time.time()
     exec_time = end_time - start_time
     print(f"Temps d'exécution total (entraînement de {name} modèles : {exec_time:.2f} secondes")
-    
+
     # for name in model_names:
     show_prediction_map(results_by_model[name], name, grid_shape=(h_patches, w_patches))
 
